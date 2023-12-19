@@ -186,5 +186,14 @@ class Employee:
         return cls.instance_from_db(row) if row else None
 
     def reviews(self):
-        """Return list of reviews associated with current employee"""
-        pass
+        from review import Review
+        array = []
+        myreviews = CURSOR.execute(f'''
+            SELECT * FROM reviews
+            WHERE employee_id = {self.id}
+            ''').fetchall()
+        
+        for each in myreviews:
+            array.append(Review.instance_from_db(each))
+
+        return array

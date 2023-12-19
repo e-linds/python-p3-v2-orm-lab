@@ -44,39 +44,116 @@ class Review:
         CONN.commit()
 
     def save(self):
-        """ Insert a new row with the year, summary, and employee id values of the current Review object.
-        Update object id attribute using the primary key value of new row.
-        Save the object in local dictionary using table row's PK as dictionary key"""
-        pass
+        sql = f'''
+            INSERT INTO reviews(year, summary, employee_id)
+            VALUES ({self.year}, "{self.summary}", {self.employee_id});
+            
+        '''
+        CURSOR.execute(sql)
+        CONN.commit()
+
+        newid = CURSOR.execute(''' SELECT * FROM reviews;''').fetchall()[-1][0]
+
+        self.id = newid
+       
+            
 
     @classmethod
     def create(cls, year, summary, employee_id):
-        """ Initialize a new Review instance and save the object to the database. Return the new instance. """
-        pass
+        newinstance = Review(year, summary, employee_id)
+        newinstance.save()
+        return newinstance
+        
    
     @classmethod
     def instance_from_db(cls, row):
-        """Return an Review instance having the attribute values from the table row."""
-        # Check the dictionary for  existing instance using the row's primary key
-        pass
-   
 
+        sql = CURSOR.execute(f""" 
+            SELECT * FROM reviews
+            WHERE id = {row[0]}
+        """).fetchone()
+        if sql:
+            return Review(id = sql[0], year = sql[1], summary = sql[2], employee_id = sql[3])
+        else: 
+            return Review.create(row[0], row[1], row[2], row[3])
+
+     
+   
     @classmethod
     def find_by_id(cls, id):
-        """Return a Review instance having the attribute values from the table row."""
-        pass
-
+        sql = CURSOR.execute(f""" 
+            SELECT * FROM reviews
+            WHERE id = {id};
+        """).fetchone()
+        if sql:
+            return Review(id = sql[0], year = sql[1], summary = sql[2], employee_id = sql[3])
+        else: return None
+        
     def update(self):
-        """Update the table row corresponding to the current Review instance."""
-        pass
+        sql = f'''
+        UPDATE reviews 
+        SET year = {self.year}, summary = "{self.summary}", employee_id = {self.employee_id} 
+        WHERE id = {self.id};
+        '''
+        CURSOR.execute(sql).fetchall()
+        CONN.commit()
+
 
     def delete(self):
-        """Delete the table row corresponding to the current Review instance,
-        delete the dictionary entry, and reassign id attribute"""
-        pass
+        sql = f'''
+            DELETE FROM reviews
+            WHERE id = {self.id};
+        '''
+        CURSOR.execute(sql)
+        CONN.commit()
+        
+        self.id = None
+                
 
     @classmethod
     def get_all(cls):
-        """Return a list containing one Review instance per table row"""
-        pass
+        all_reviews = CURSOR.execute('''
+        SELECT * FROM reviews
+        ''').fetchall()
+        array = []
+        for each in all_reviews:
+            array.append(Review(id = each[0],
+                                year = each[1],
+                                summary = each[2],
+                                employee_id = each[3]))
+        return array
+    
+
+    def get_year(self):
+        return self._year
+
+    def set_year(self, value):
+        if type(value) is int and value >= 2000:
+            self._year = value
+        else: raise ValueError("not valid year")
+    
+    year = property(get_year, set_year)
+
+    def get_summary(self):
+        return self._summary
+
+    def set_summary(self, value):
+        if type(value) is str and len(value) > 0:
+            self._summary = value
+        else: raise ValueError("not valid summary")
+    
+    summary = property(get_summary, set_summary)
+
+    #idk what is going on here below 
+
+    def get_employee_id(self):
+        return self._employee_id
+        
+    def set_employee_id(self, value):
+        employee = Employee.find_by_id(value)
+        if type(employee) is Employee:
+            self._employee_id = value
+        else: raise ValueError("not valid Employee type")
+
+    employee_id = property(get_employee_id, set_employee_id)
 
